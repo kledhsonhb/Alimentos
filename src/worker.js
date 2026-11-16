@@ -1,4 +1,4 @@
-// API do Combustível 70.3 — roda no Cloudflare Pages Functions.
+// API do Combustível 70.3 — Cloudflare Worker (serve o site em /public e a API em /api).
 // Precisa de: vínculo KV chamado NUTRI e a variável APP_KEY (a senha do app).
 
 const json = (data, status = 200) =>
@@ -9,9 +9,9 @@ const json = (data, status = 200) =>
 
 const KEY_OK = /^[A-Za-z0-9_\-\/.]{1,200}$/;
 
-export async function onRequest({ request, env, params }) {
+async function api(request, env) {
   const url = new URL(request.url);
-  const path = [].concat(params.path || []).join("/");
+  const path = url.pathname.replace(/^\/api\/?/, "");
 
   if (!env.NUTRI) return json({ error: "O armazenamento KV 'NUTRI' não está vinculado ao projeto." }, 500);
   if (!env.APP_KEY) return json({ error: "A variável APP_KEY (senha) não foi criada no projeto." }, 500);
@@ -83,3 +83,11 @@ export async function onRequest({ request, env, params }) {
 
   return json({ error: "Rota não encontrada." }, 404);
 }
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/")) return api(request, env);
+    return env.ASSETS.fetch(request);
+  },
+};
