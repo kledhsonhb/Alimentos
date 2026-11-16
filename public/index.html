@@ -176,7 +176,7 @@ section.view{display:none}section.view.on{display:block}
   <section class="view" id="v-ajustes">
     <div class="g2">
       <div class="card"><h2>Plano</h2><div class="set" id="set"></div><p class="sync">Meta basal = metabolismo basal (pelo peso do dia) × fator da rotina. As atividades descontam do que você comeu, e o saldo considerando o déficit mostra quanto ainda pode comer. 1 kg de gordura ≈ 7.700 kcal.</p></div>
-      <div class="card"><h2>Dados</h2><p class="sync">Tudo fica salvo no seu Cloudflare. Copie uma cópia de segurança quando quiser.</p><div class="row"><button id="exp">Copiar backup (JSON)</button><button id="sair">Sair deste aparelho</button></div><div class="msg" id="aMsg"></div></div>
+      <div class="card"><h2>Dados</h2><p class="sync">Tudo fica salvo no seu Cloudflare. Copie uma cópia de segurança quando quiser.</p><div class="row" style="margin-bottom:10px"><button id="verKey">Mostrar a senha deste aparelho</button><span id="keyShow" class="num" style="font-size:22px;align-self:center"></span></div><div class="row"><button id="exp">Copiar backup (JSON)</button><button id="sair">Sair deste aparelho</button></div><div class="msg" id="aMsg"></div></div>
     </div>
   </section>
 </main>
@@ -291,7 +291,7 @@ const iso=t=>`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${Str
 const add=(s,n)=>{const[y,m,d]=s.split('-').map(Number);return iso(new Date(y,m-1,d+n))};
 const lab=(s,o={weekday:'short',day:'numeric',month:'short'})=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pt-BR',o)};
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
-const VERSAO='versão 16/11 · 09h15';
+const VERSAO='versão 16/11 · 09h20';
 const TODAY=iso(new Date());
 let KEY='';try{KEY=localStorage.getItem('c703key')||''}catch(e){}
 let prof={...DEF},custom={},day=null,cur=TODAY,hist=[],lastDel=null,preview=[],editing=null;
@@ -414,6 +414,7 @@ $('#fClr').onclick=()=>fillForm(null);
 $('#set').innerHTML=SETF.map(([k,l,s])=>`<div><label for="s_${k}">${l}</label><input id="s_${k}" type="number" step="${s}" inputmode="decimal" data-sk="${k}"></div>`).join('');
 $('#set').addEventListener('change',e=>{const k=e.target.dataset.sk,v=parseFloat(e.target.value);if(k&&v>0){prof[k]=v;saveProf();render()}});
 $('#exp').onclick=async()=>{const data={profile:prof,foods:custom,days:hist};try{await navigator.clipboard.writeText(JSON.stringify(data));$('#aMsg').textContent='Backup copiado. Cole num arquivo de texto para guardar.'}catch(e){$('#aMsg').textContent='Não consegui copiar neste navegador.'}};
+$('#verKey').onclick=()=>{const el=$('#keyShow');el.textContent=el.textContent?'':(KEY||'(nenhuma)')};
 $('#sair').onclick=()=>{try{localStorage.removeItem('c703key')}catch(e){}KEY='';showLogin('')};
 $('#keyBtn').onclick=async()=>{KEY=$('#key').value.trim();try{localStorage.setItem('c703key',KEY)}catch(e){}$('#keyMsg').textContent='Entrando…';await start()};
 $('#key').onkeydown=e=>{if(e.key==='Enter')$('#keyBtn').click()};
