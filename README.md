@@ -1,4 +1,4 @@
-# Combustível 70.3 — controle de alimentação
+# Nutricional 2026/2027 — controle de alimentação
 
 Sistema pessoal de alimentação ligado aos treinos (Ironman 70.3 Panamá).
 Roda como **Cloudflare Worker** ("alimentos"), e os dados ficam no **Cloudflare KV**.
