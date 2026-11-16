@@ -106,14 +106,14 @@ section.view{display:none}section.view.on{display:block}
 
   <section class="view" id="v-painel">
     <div class="kpis">
-      <div class="kpi acc"><div class="num" id="kMeta">—</div><span>meta do dia (kcal)</span></div>
+      <div class="kpi acc"><div class="num" id="kMeta">—</div><span>meta basal (kcal)</span></div>
       <div class="kpi"><div class="num" id="kCons">—</div><span>consumido</span></div>
-      <div class="kpi"><div class="num" id="kRest">—</div><span id="kRestL">restante</span></div>
-      <div class="kpi"><div class="num" id="kPeso">—</div><span id="kPesoL">peso</span></div>
+      <div class="kpi"><div class="num" id="kAtiv">—</div><span>atividades (desconta)</span></div>
+      <div class="kpi"><div class="num" id="kRest">—</div><span id="kRestL">saldo com déficit</span></div>
     </div>
     <div class="g2">
       <div class="stack">
-        <div class="card"><div class="gauge"><div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="12"/><circle id="ring" cx="60" cy="60" r="52" fill="none" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 999"/></svg><div><span class="num" id="rPct">0%</span><span class="sync">da meta</span></div></div><div id="bars"></div></div><p class="sync" id="calc"></p></div>
+        <div class="card"><div class="gauge"><div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="12"/><circle id="ring" cx="60" cy="60" r="52" fill="none" stroke="var(--acc)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 999"/></svg><div><span class="num" id="rPct">0%</span><span class="sync">do limite</span></div></div><div id="bars"></div></div><p class="sync" id="calc"></p></div>
         <div class="card"><h2>Refeições x dia</h2><div class="scroll"><table><thead><tr><th>Refeição</th><th class="n">kcal</th><th class="n">% dia</th><th class="n">P %</th><th class="n">C %</th><th class="n">G %</th></tr></thead><tbody id="mSum"></tbody></table></div></div>
       </div>
       <div class="stack">
@@ -175,7 +175,7 @@ section.view{display:none}section.view.on{display:block}
 
   <section class="view" id="v-ajustes">
     <div class="g2">
-      <div class="card"><h2>Plano</h2><div class="set" id="set"></div><p class="sync">Meta do dia = metabolismo basal (pelo peso do dia) × fator da rotina − déficit. As atividades físicas não aumentam a meta: o que você gasta treinando vira déficit extra, mostrado no quadro de balanço. 1 kg de gordura ≈ 7.700 kcal.</p></div>
+      <div class="card"><h2>Plano</h2><div class="set" id="set"></div><p class="sync">Meta basal = metabolismo basal (pelo peso do dia) × fator da rotina. As atividades descontam do que você comeu, e o saldo considerando o déficit mostra quanto ainda pode comer. 1 kg de gordura ≈ 7.700 kcal.</p></div>
       <div class="card"><h2>Dados</h2><p class="sync">Tudo fica salvo no seu Cloudflare. Copie uma cópia de segurança quando quiser.</p><div class="row"><button id="exp">Copiar backup (JSON)</button><button id="sair">Sair deste aparelho</button></div><div class="msg" id="aMsg"></div></div>
     </div>
   </section>
@@ -318,7 +318,7 @@ function parseLine(line){let w=norm(line).split(' ').filter(Boolean),qty=null,gr
 
 // ---------- cálculo
 function pesoEm(d){const p=prof.pesos||{},ks=Object.keys(p).filter(k=>k<=d).sort();if(ks.length)return p[ks[ks.length-1]];const all=Object.keys(p).sort();return all.length?p[all[0]]:83}
-function metas(d,dd){const w=pesoEm(d),base=(10*w+6.25*prof.altura-5*prof.idade+5)*prof.fator;const tr=(dd?.treinos||[]).reduce((a,t)=>a+(+t.kcal||0),0);const def=prof.deficit;const kcal=Math.round((base-def)/10)*10;const p=Math.round(w*prof.protKg),g=Math.round(w*prof.gordKg);return{kcal,p,g,c:Math.max(0,Math.round((kcal-p*4-g*9)/4)),base:Math.round(base),tr,def,w,gasto:Math.round(base+tr)}}
+function metas(d,dd){const w=pesoEm(d),base=(10*w+6.25*prof.altura-5*prof.idade+5)*prof.fator;const tr=(dd?.treinos||[]).reduce((a,t)=>a+(+t.kcal||0),0);const def=prof.deficit;const kcal=Math.round((base+tr-def)/10)*10;const p=Math.round(w*prof.protKg),g=Math.round(w*prof.gordKg);return{kcal,p,g,c:Math.max(0,Math.round((kcal-p*4-g*9)/4)),base:Math.round(base),tr,def,w,gasto:Math.round(base+tr)}}
 const tot=its=>its.reduce((a,i)=>({k:a.k+i.k,p:a.p+i.p,c:a.c+i.c,f:a.f+i.f}),{k:0,p:0,c:0,f:0});
 function mkItem(f,g,ref){const r=x=>Math.round(x*g/100*10)/10;return{id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ref,nome:f.nome,g:Math.round(g*10)/10,por:f.pg?`${fmt(g/f.pg,1)} ${f.pn}`:'',k:r(f.k),p:r(f.p),c:r(f.c),f:r(f.g)}}
 const pc=(a,b)=>b?fmt(a/b*100)+'%':'—';
@@ -328,23 +328,22 @@ const TITLES={painel:'Painel',lancar:'Lançar',refeicoes:'Refeições',historico
 function route(){let v=(location.hash||'#painel').slice(1);if(!TITLES[v])v='painel';document.querySelectorAll('section.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));document.querySelectorAll('nav.side a').forEach(a=>a.classList.toggle('on',a.dataset.v===v));$('#vtitle').textContent=TITLES[v];if(v==='historico')drawW()}
 function render(){
   if(!day)return;$('#dlabel').textContent=cur===TODAY?'Hoje · '+lab(cur,{day:'numeric',month:'short'}):lab(cur);
-  const its=day.itens,m=metas(cur,day),t=tot(its),pct=m.kcal?t.k/m.kcal:0,rest=m.kcal-t.k;
-  $('#kMeta').textContent=fmt(m.kcal);$('#kCons').textContent=fmt(t.k);$('#kRest').textContent=fmt(Math.abs(rest));$('#kRest').style.color=rest<0?'var(--bad)':'';$('#kRestL').textContent=rest<0?'acima da meta':'restante';
-  const w=pesoEm(cur),falta=Math.max(0,w-prof.pesoMeta);$('#kPeso').textContent=fmt(w,1);$('#kPesoL').textContent=falta>0?`kg · faltam ${fmt(falta,1)} p/ ${fmt(prof.pesoMeta,1)}`:'kg · meta atingida';
+  const its=day.itens,m=metas(cur,day),t=tot(its),liq=t.k-m.tr,lim=m.base-m.def,pct=lim?Math.max(liq,0)/lim:0,rest=lim-liq;
+  $('#kMeta').textContent=fmt(m.base);$('#kCons').textContent=fmt(t.k);$('#kAtiv').textContent=m.tr?'− '+fmt(m.tr):'0';$('#kRest').textContent=fmt(rest);$('#kRest').style.color=rest<0?'var(--bad)':'var(--ok)';$('#kRestL').textContent=rest<0?'passou do déficit':'saldo com déficit';
+  const w=pesoEm(cur),falta=Math.max(0,w-prof.pesoMeta);
   $('#ring').setAttribute('stroke-dasharray',`${Math.min(pct,1)*2*Math.PI*52} 999`);$('#ring').setAttribute('stroke',pct>1?'var(--bad)':'var(--acc)');$('#rPct').textContent=fmt(pct*100)+'%';
   $('#bars').innerHTML=[['Proteína',t.p,m.p,'--p'],['Carboidrato',t.c,m.c,'--c'],['Gordura',t.f,m.g,'--g']].map(([n,v,a,col])=>{const q=a?v/a:0;return`<div class="bar"><div class="lab"><span>${n}</span><b>${fmt(v)} / ${fmt(a)} g · ${fmt(q*100)}%</b></div><div class="track"><div class="fill" style="width:${Math.min(q,1)*100}%;background:${q>1.1?'var(--bad)':`var(${col})`}"></div></div></div>`}).join('');
-  $('#calc').textContent=`Meta = gasto basal+rotina ${fmt(m.base)} − déficit ${fmt(m.def)} = ${fmt(m.kcal)} kcal. As atividades não aumentam a meta: viram déficit extra.`;
-  const sd=m.gasto-t.k,sdd=sd-m.def;
-  $('#bal').innerHTML=`<tr><td>Gasto basal + rotina</td><td class="n">${fmt(m.base)}</td></tr>${day.treinos.map(x=>`<tr><td>+ ${esc(x.nome)}</td><td class="n">${fmt(x.kcal)}</td></tr>`).join('')}<tr class="sub"><td>Gasto total do dia</td><td class="n">${fmt(m.gasto)}</td></tr><tr><td>− Consumido</td><td class="n">${fmt(t.k)}</td></tr><tr class="sub"><td>Saldo do dia (déficit real)</td><td class="n" style="color:${sd>=0?'var(--ok)':'var(--bad)'}">${fmt(sd)}</td></tr><tr><td>− Déficit planejado</td><td class="n">${fmt(m.def)}</td></tr><tr class="sub"><td>Saldo considerando o déficit<small>${sdd>=0?'ainda pode comer mantendo o déficit':'passou do que o déficit permite'}</small></td><td class="n" style="color:${sdd>=0?'var(--ok)':'var(--bad)'}">${fmt(sdd)}</td></tr>`;
+  $('#calc').textContent=`Limite do dia = meta basal ${fmt(m.base)} − déficit ${fmt(m.def)} = ${fmt(lim)} kcal líquidas (comido − atividades). O anel mostra quanto desse limite já foi usado.`;
+  const sd=m.base-liq;
+  $('#bal').innerHTML=`<tr class="sub"><td>Meta basal (gasto do dia sem treino)</td><td class="n">${fmt(m.base)}</td></tr><tr><td>Consumido</td><td class="n">${fmt(t.k)}</td></tr>${day.treinos.map(x=>`<tr><td>− ${esc(x.nome)}</td><td class="n">− ${fmt(x.kcal)}</td></tr>`).join('')}<tr class="sub"><td>Calorias líquidas (comido − atividades)</td><td class="n">${fmt(liq)}</td></tr><tr class="sub"><td>Saldo do dia<small>meta basal − calorias líquidas</small></td><td class="n" style="color:${sd>=0?'var(--ok)':'var(--bad)'}">${fmt(sd)}</td></tr><tr><td>− Déficit planejado</td><td class="n">− ${fmt(m.def)}</td></tr><tr class="sub"><td>Saldo considerando o déficit<small>${rest>=0?'ainda pode comer mantendo o déficit':'passou do que o déficit permite'}</small></td><td class="n" style="color:${rest>=0?'var(--ok)':'var(--bad)'}">${fmt(rest)}</td></tr>`;
   const used=MEALS.filter(r=>its.some(i=>i.ref===r));
   $('#mSum').innerHTML=used.map(r=>{const s=tot(its.filter(i=>i.ref===r));return`<tr><td>${r}</td><td class="n">${fmt(s.k)}</td><td class="n">${pc(s.k,m.kcal)}</td><td class="n">${pc(s.p,m.p)}</td><td class="n">${pc(s.c,m.c)}</td><td class="n">${pc(s.f,m.g)}</td></tr>`}).join('')+(used.length?`<tr class="sub"><td>Total do dia</td><td class="n">${fmt(t.k)}</td><td class="n">${pc(t.k,m.kcal)}</td><td class="n">${pc(t.p,m.p)}</td><td class="n">${pc(t.c,m.c)}</td><td class="n">${pc(t.f,m.g)}</td></tr>`:'<tr><td colspan="6" class="sync">Nada lançado neste dia.</td></tr>');
   // alertas
   const A=[],h=new Date().getHours(),fim=cur<TODAY||(cur===TODAY&&h>=21);
-  if(t.k>m.kcal)A.push(['bad',`Passou da meta em ${fmt(t.k-m.kcal)} kcal.`]);else if(pct>=0.9)A.push(['warn',`Restam só ${fmt(rest)} kcal para o dia.`]);
+  if(rest<0)A.push(['bad',`Passou do limite com déficit em ${fmt(-rest)} kcal.`]);else if(pct>=0.9)A.push(['warn',`Restam só ${fmt(rest)} kcal mantendo o déficit.`]);
   if(t.f>m.g*1.1)A.push(['bad',`Gordura em ${fmt(t.f)} g (meta ${m.g} g). Queijo, requeijão, ovos e castanhas somam rápido.`]);
   used.forEach(r=>{const mk=tot(its.filter(i=>i.ref===r)).k;if(r!=='Durante treino'&&mk/m.kcal>0.4)A.push(['warn',`${r} levou ${fmt(mk/m.kcal*100)}% das calorias do dia.`])});
   if(its.length&&(cur===TODAY&&h>=17||fim)&&t.p<m.p*0.75)A.push(['warn',`Proteína em ${pc(t.p,m.p)} da meta. Iogurte proteico, whey, frango ou tilápia ajudam.`]);
-  if(m.tr>=700&&(m.gasto-m.kcal)>1100)A.push(['warn',`Treino pesado hoje: comendo só a meta, o déficit real fica em ~${fmt(m.gasto-m.kcal)} kcal. Coma parte do treino de volta, com carboidrato perto do treino.`]);
   if(its.length&&fim&&m.gasto-t.k>1200)A.push(['bad',`Déficit real de ${fmt(m.gasto-t.k)} kcal: grande demais para quem treina para o 70.3. Atrapalha a recuperação e consome músculo.`]);
   if(its.length&&m.tr>=700&&(cur===TODAY&&h>=15||fim)&&t.c<m.c*0.5)A.push(['warn','Dia de treino forte com pouco carboidrato: atrapalha o treino e a recuperação.']);
   if(its.length&&fim&&t.k<m.kcal-500)A.push(['bad',`Ficou ${fmt(m.kcal-t.k)} kcal abaixo de uma meta que já tem déficit. Exagerar consome músculo e derruba o treino.`]);
