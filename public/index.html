@@ -86,7 +86,7 @@ section.view{display:none}section.view.on{display:block}
 </style>
 </head>
 <body>
-<div class="login" id="login"><div class="card"><h2>Nutricional 2026/2027</h2><label for="key">Senha do app</label><input id="key" type="password" autocomplete="current-password"><div class="row" style="margin-top:10px"><button class="pri" id="keyBtn">Entrar</button></div><div class="msg" id="keyMsg"></div></div></div>
+<div class="login" id="login"><div class="card"><h2>Nutricional 2026/2027</h2><label for="key">Senha do app</label><p class="sync" style="margin:0 0 8px">No primeiro acesso, a senha que você digitar aqui vira a senha do app.</p><input id="key" type="password" autocomplete="current-password"><div class="row" style="margin-top:10px"><button class="pri" id="keyBtn">Entrar</button></div><div class="msg" id="keyMsg"></div></div></div>
 <div class="app">
 <nav class="side" id="nav">
   <div class="brand"><i></i>Nutricional 2026/2027</div>
@@ -273,11 +273,16 @@ const SETF=[['pesoMeta','Peso meta (kg)',0.1],['deficit','Déficit diário (kcal
 // primeiro uso: dados já combinados no chat (16/11/2026)
 const SEED_PROF={...DEF,pesos:{'2026-11-16':83}};
 const SEED_DAY={date:'2026-11-16',treinos:[{nome:'Funcional 50 min',kcal:350}],itens:[
- {id:'s1',ref:'Café da manhã',nome:'Café preto (sem açúcar)',g:100,por:'1 xícara',k:2,p:0.1,c:0.3,f:0},
- {id:'s2',ref:'Café da manhã',nome:'Pão integral',g:60,por:'2 fatia',k:151.8,p:5.6,c:29.9,f:2.2},
- {id:'s3',ref:'Café da manhã',nome:'Requeijão Tirolez',g:30,por:'1 colher de sopa',k:51.6,p:3.9,c:0.9,f:3.6},
- {id:'s4',ref:'Café da manhã',nome:'Queijo muçarela',g:20,por:'1 fatia',k:66,p:4.5,c:0.6,f:5},
- {id:'s5',ref:'Café da manhã',nome:'Ovo',g:150,por:'3 unidade',k:219,p:20,c:0.9,f:14.3}]};
+ {"id": "s0", "ref": "Café da manhã", "nome": "Café preto (sem açúcar)", "g": 100, "por": "1,0 xícara", "k": 2, "p": 0.1, "c": 0.3, "f": 0},
+ {"id": "s1", "ref": "Café da manhã", "nome": "Pão integral", "g": 60, "por": "2,0 fatia", "k": 151.8, "p": 5.6, "c": 29.9, "f": 2.2},
+ {"id": "s2", "ref": "Café da manhã", "nome": "Requeijão Tirolez", "g": 30, "por": "1,0 colher de sopa", "k": 51.6, "p": 3.9, "c": 0.9, "f": 3.6},
+ {"id": "s3", "ref": "Café da manhã", "nome": "Queijo muçarela", "g": 20, "por": "1,0 fatia", "k": 66, "p": 4.5, "c": 0.6, "f": 5},
+ {"id": "s4", "ref": "Café da manhã", "nome": "Ovo", "g": 150, "por": "3,0 unidade", "k": 219, "p": 20, "c": 0.9, "f": 14.3},
+ {"id": "s5", "ref": "Café da manhã", "nome": "Frango desfiado Nat", "g": 15, "por": "0,2 xícara", "k": 19.2, "p": 3.9, "c": 0, "f": 0.4},
+ {"id": "s6", "ref": "Lanche manhã", "nome": "Iogurte natural proteico", "g": 200, "por": "1,0 copo", "k": 108, "p": 23, "c": 4, "f": 0},
+ {"id": "s7", "ref": "Lanche manhã", "nome": "Mix nuts com uva-passa", "g": 30, "por": "1,0 punhado", "k": 150, "p": 3.9, "c": 12, "f": 9.9},
+ {"id": "s8", "ref": "Lanche manhã", "nome": "Whey paçoca", "g": 25, "por": "1,0 dose", "k": 99.3, "p": 13.5, "c": 6.8, "f": 2},
+ {"id": "s9", "ref": "Lanche manhã", "nome": "Banana", "g": 70, "por": "1,0 unidade", "k": 68.6, "p": 0.9, "c": 18.2, "f": 0.1}]};
 
 const $=s=>document.querySelector(s);
 const fmt=(n,d=0)=>Number(n||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -286,7 +291,7 @@ const iso=t=>`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${Str
 const add=(s,n)=>{const[y,m,d]=s.split('-').map(Number);return iso(new Date(y,m-1,d+n))};
 const lab=(s,o={weekday:'short',day:'numeric',month:'short'})=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pt-BR',o)};
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
-const VERSAO='versão 16/11 · 09h10';
+const VERSAO='versão 16/11 · 09h15';
 const TODAY=iso(new Date());
 let KEY='';try{KEY=localStorage.getItem('c703key')||''}catch(e){}
 let prof={...DEF},custom={},day=null,cur=TODAY,hist=[],lastDel=null,preview=[],editing=null;

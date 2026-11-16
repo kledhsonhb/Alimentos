@@ -7,6 +7,11 @@ const json = (data, status = 200) =>
     headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
   });
 
+async function sha256(t) {
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("c703:" + t));
+  return [...new Uint8Array(d)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
 const KEY_OK = /^[A-Za-z0-9_\-\/.]{1,200}$/;
 
 async function api(request, env) {
@@ -14,13 +19,23 @@ async function api(request, env) {
   const path = url.pathname.replace(/^\/api\/?/, "");
 
   if (!env.NUTRI) return json({ error: "O armazenamento KV 'NUTRI' não está vinculado ao projeto." }, 500);
-  if (!env.APP_KEY) return json({ error: "A variável APP_KEY (senha) não foi criada no projeto." }, 500);
-  if (request.headers.get("x-app-key") !== env.APP_KEY) return json({ error: "Senha incorreta." }, 401);
+  // Senha: usa APP_KEY do painel, se existir; senão, a senha criada no primeiro acesso (guardada como hash no KV)
+  const given = request.headers.get("x-app-key") || "";
+  if (env.APP_KEY) {
+    if (given !== env.APP_KEY) return json({ error: "Senha incorreta." }, 401);
+  } else {
+    const hash = await sha256(given);
+    const saved = await env.NUTRI.get("_auth");
+    if (!saved) {
+      if (given.length < 4) return json({ error: "Crie uma senha com pelo menos 4 caracteres." }, 401);
+      await env.NUTRI.put("_auth", hash);
+    } else if (saved !== hash) return json({ error: "Senha incorreta." }, 401);
+  }
 
   // Ler / gravar / apagar um documento
   if (path === "kv") {
     const key = url.searchParams.get("key") || "";
-    if (!KEY_OK.test(key)) return json({ error: "Chave inválida." }, 400);
+    if (!KEY_OK.test(key) || key.startsWith("_")) return json({ error: "Chave inválida." }, 400);
     if (request.method === "GET") return json({ value: await env.NUTRI.get(key, "json") });
     if (request.method === "PUT") {
       const body = await request.text();
