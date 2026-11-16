@@ -286,7 +286,7 @@ const iso=t=>`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${Str
 const add=(s,n)=>{const[y,m,d]=s.split('-').map(Number);return iso(new Date(y,m-1,d+n))};
 const lab=(s,o={weekday:'short',day:'numeric',month:'short'})=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).toLocaleDateString('pt-BR',o)};
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
-const VERSAO='versão 16/11 · 09h';
+const VERSAO='versão 16/11 · 09h10';
 const TODAY=iso(new Date());
 let KEY='';try{KEY=localStorage.getItem('c703key')||''}catch(e){}
 let prof={...DEF},custom={},day=null,cur=TODAY,hist=[],lastDel=null,preview=[],editing=null;
@@ -416,7 +416,11 @@ addEventListener('hashchange',route);new ResizeObserver(drawW).observe($('#wfig'
 
 async function start(){if(!KEY)return showLogin('');
   try{const p=await api('kv?key=app/profile');$('#login').style.display='none';
-    if(!p.value){prof={...SEED_PROF};await sset('app/profile',prof);const d=await api('kv?key=days/2026-11-16');if(!d.value)await sset('days/2026-11-16',SEED_DAY)}else prof={...DEF,...p.value};
+    // envia para a nuvem o que ficou salvo só neste aparelho (quando a nuvem ainda não tinha)
+    const locais=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('c703:')&&k!=='c703:key')locais.push(k.slice(5))}}catch(e){}
+    let enviados=0;for(const k of locais){if(k==='app/profile')continue;const v=cache.get(k);if(!v)continue;const r=await api('kv?key='+encodeURIComponent(k));if(!r.value){await api('kv?key='+encodeURIComponent(k),{method:'PUT',body:JSON.stringify(v)});enviados++}}
+    if(!p.value){prof={...SEED_PROF,...(cache.get('app/profile')||{})};await sset('app/profile',prof);const d=await api('kv?key=days/2026-11-16');if(!d.value)await sset('days/2026-11-16',SEED_DAY)}else prof={...DEF,...p.value};
+    if(enviados)toast(`${enviados} registro(s) deste aparelho enviados para a nuvem`);
     custom=(await sget('app/foods'))?.items||{};SETF.forEach(([k])=>$('#s_'+k).value=prof[k]);
     await loadHist();await loadDay(cur);sync('Conectado ao Cloudflare · '+VERSAO);$('#foot').textContent='Dados no seu Cloudflare · '+VERSAO}
   catch(e){if(e.message!=='senha'){$('#login').style.display='none';sync('⚠ '+e.message);prof={...DEF,...(cache.get('app/profile')||{})};custom=cache.get('app/foods')?.items||{};day=cache.get('days/'+cur)||{date:cur,itens:[],treinos:[]};render()}}}
