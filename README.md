@@ -1,7 +1,7 @@
 # Combustível 70.3 — controle de alimentação
 
 Sistema pessoal de alimentação ligado aos treinos (Ironman 70.3 Panamá).
-Roda como **Cloudflare Worker** ("nutricional"), e os dados ficam no **Cloudflare KV**.
+Roda como **Cloudflare Worker** ("alimentos"), e os dados ficam no **Cloudflare KV**.
 
 - `public/index.html`: o sistema (Painel, Lançar, Refeições, Histórico, Alimentos, Ajustes)
 - `src/worker.js`: a API que salva e lê os dados e busca alimentos na internet (Open Food Facts)
@@ -9,7 +9,7 @@ Roda como **Cloudflare Worker** ("nutricional"), e os dados ficam no **Cloudflar
 
 ## Configuração (uma vez só)
 
-No Worker **nutricional** → *Configurações* → *Variáveis e segredos* → **Adicionar**:
+No Worker **alimentos** → *Configurações* → *Variáveis e segredos* → **Adicionar**:
 tipo **Secreto**, nome `APP_KEY`, valor = a senha do app. Depois, *Implantações* → publicar de novo.
 
 Cada envio para a branch `main` publica sozinho.
